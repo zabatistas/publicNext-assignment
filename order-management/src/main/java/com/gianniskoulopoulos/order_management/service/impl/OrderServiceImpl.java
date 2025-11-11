@@ -12,6 +12,8 @@ import com.gianniskoulopoulos.order_management.model.Product;
 import com.gianniskoulopoulos.order_management.model.dto.OrderCreationRequest;
 import com.gianniskoulopoulos.order_management.model.dto.OrderLineRequest;
 import com.gianniskoulopoulos.order_management.model.dto.OrderUpdateRequest;
+import com.gianniskoulopoulos.order_management.model.event.OrderEvent;
+import com.gianniskoulopoulos.order_management.repository.OrderEventRepository;
 import com.gianniskoulopoulos.order_management.repository.OrderRepository;
 import com.gianniskoulopoulos.order_management.repository.ProductRepository;
 import com.gianniskoulopoulos.order_management.service.OrderEventPublisher;
@@ -28,13 +30,16 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final OrderEventPublisher orderEventPublisher;
+    private final OrderEventRepository orderEventRepository;
 
     public OrderServiceImpl(OrderRepository orderRepository, 
                            ProductRepository productRepository,
-                           OrderEventPublisher orderEventPublisher) {
+                           OrderEventPublisher orderEventPublisher,
+                           OrderEventRepository orderEventRepository) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.orderEventPublisher = orderEventPublisher;
+        this.orderEventRepository = orderEventRepository;
     }
 
     @Override
@@ -173,6 +178,16 @@ public class OrderServiceImpl implements OrderService {
         }
         
         return updatedOrder;
+    }
+
+    @Override
+    public List<OrderEvent> getOrderHistory(Long orderId) {
+        // Verify order exists
+        orderRepository.findById(orderId)
+            .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
+        
+        // Return order events sorted by timestamp
+        return orderEventRepository.findByOrderId(orderId);
     }
     
 }

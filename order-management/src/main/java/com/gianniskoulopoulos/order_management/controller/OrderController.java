@@ -8,7 +8,10 @@ import com.gianniskoulopoulos.order_management.model.Order;
 import com.gianniskoulopoulos.order_management.model.OrderStatus;
 import com.gianniskoulopoulos.order_management.model.dto.OrderCreationRequest;
 import com.gianniskoulopoulos.order_management.model.dto.OrderUpdateRequest;
+import com.gianniskoulopoulos.order_management.model.event.OrderEvent;
 import com.gianniskoulopoulos.order_management.service.OrderService;
+
+import java.util.List;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -84,6 +87,12 @@ public class OrderController {
     public ResponseEntity<Order> updateOrderStatus(@PathVariable Long id, @RequestBody OrderStatus status) {
         Order updatedOrder = orderService.updateOrderStatus(id, status);
         return ResponseEntity.ok(updatedOrder);
+    }
+
+    @GetMapping("/{id}/history")
+    public ResponseEntity<List<OrderEvent>> getOrderHistory(@PathVariable Long id) {
+        List<OrderEvent> orderHistory = orderService.getOrderHistory(id);
+        return ResponseEntity.ok(orderHistory);
     }
 
 }

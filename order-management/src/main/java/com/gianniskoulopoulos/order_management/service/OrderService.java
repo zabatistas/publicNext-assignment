@@ -8,6 +8,9 @@ import com.gianniskoulopoulos.order_management.model.Order;
 import com.gianniskoulopoulos.order_management.model.OrderStatus;
 import com.gianniskoulopoulos.order_management.model.dto.OrderCreationRequest;
 import com.gianniskoulopoulos.order_management.model.dto.OrderUpdateRequest;
+import com.gianniskoulopoulos.order_management.model.event.OrderEvent;
+
+import java.util.List;
 
 @Service
 public interface OrderService {
@@ -23,4 +26,6 @@ public interface OrderService {
     Page<Order> getAllOrders(Long customerId, OrderStatus status, Pageable pageable);
     
     Order updateOrderStatus(Long orderId, OrderStatus status);
+    
+    List<OrderEvent> getOrderHistory(Long orderId);
 }
