@@ -1,5 +1,6 @@
 package com.gianniskoulopoulos.order_management.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,26 +18,32 @@ import lombok.Data;
 @Table(name = "orders")
 @Data
 @Builder
+@Schema(description = "Order entity representing a customer order")
 public class Order {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Schema(description = "Unique identifier of the order", example = "1", accessMode = Schema.AccessMode.READ_ONLY)
     private Long id;
 
-    // Assuming there's a customerId field to link orders to customers
+    @Schema(description = "ID of the customer who placed the order", example = "12345")
     private Long customerId;
 
+    @Schema(description = "Current status of the order")
     private OrderStatus status;
 
-    // TODO: Check if more dates are needed (e.g. order modified date)
+    @Schema(description = "Date and time when the order was placed", example = "2025-11-11T10:30:00")
     private LocalDateTime orderDate;
 
+    @Schema(description = "Total amount of the order", example = "99.99")
     private BigDecimal totalAmount;
 
     @OneToMany(mappedBy = "order")
+    @Schema(description = "List of order line items")
     private List<OrderLine> orderLines;
 
     @Builder.Default
+    @Schema(description = "Soft delete flag", example = "false")
     private Boolean isDeleted = false;
     
 }
