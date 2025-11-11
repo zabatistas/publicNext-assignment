@@ -14,6 +14,7 @@ import com.gianniskoulopoulos.order_management.model.dto.OrderLineRequest;
 import com.gianniskoulopoulos.order_management.model.dto.OrderUpdateRequest;
 import com.gianniskoulopoulos.order_management.repository.OrderRepository;
 import com.gianniskoulopoulos.order_management.repository.ProductRepository;
+import com.gianniskoulopoulos.order_management.service.OrderEventPublisher;
 import com.gianniskoulopoulos.order_management.service.OrderService;
 
 import jakarta.persistence.criteria.Predicate;
@@ -26,10 +27,14 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final OrderEventPublisher orderEventPublisher;
 
-    public OrderServiceImpl(OrderRepository orderRepository, ProductRepository productRepository) {
+    public OrderServiceImpl(OrderRepository orderRepository, 
+                           ProductRepository productRepository,
+                           OrderEventPublisher orderEventPublisher) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
+        this.orderEventPublisher = orderEventPublisher;
     }
 
     @Override
@@ -88,7 +93,13 @@ public class OrderServiceImpl implements OrderService {
 
         // Update status if provided
         if (request.status() != null) {
+            OrderStatus previousStatus = existingOrder.getStatus();
             existingOrder.setStatus(request.status());
+            
+            // Publish event if status changed
+            if (previousStatus != null && !previousStatus.equals(request.status())) {
+                orderEventPublisher.publishOrderStatusChangeEvent(existingOrder, previousStatus, request.status());
+            }
         }
 
         // Update order lines if provided
@@ -152,8 +163,16 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
         
+        OrderStatus previousStatus = order.getStatus();
         order.setStatus(status);
-        return orderRepository.save(order);
+        Order updatedOrder = orderRepository.save(order);
+        
+        // Publish event for status change
+        if (previousStatus != null && !previousStatus.equals(status)) {
+            orderEventPublisher.publishOrderStatusChangeEvent(updatedOrder, previousStatus, status);
+        }
+        
+        return updatedOrder;
     }
     
 }
