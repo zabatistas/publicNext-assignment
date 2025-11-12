@@ -5,6 +5,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gianniskoulopoulos.order_management.model.Order;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
 import com.gianniskoulopoulos.order_management.model.OrderStatus;
 import com.gianniskoulopoulos.order_management.model.dto.OrderCreationRequest;
 import com.gianniskoulopoulos.order_management.model.dto.OrderUpdateRequest;
@@ -29,6 +32,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -41,6 +45,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RestController()
 @RequestMapping("/api/v1/orders")
 @Tag(name = "Order Management", description = "APIs for managing customer orders")
+@Validated
 public class OrderController {
 
     private final OrderService orderService;
@@ -56,10 +61,10 @@ public class OrderController {
     })
     @GetMapping("")
     public ResponseEntity<Page<Order>> getAllOrders(
-            @Parameter(description = "Filter by customer ID") @RequestParam(required = false) Long customerId,
+            @Parameter(description = "Filter by customer ID") @Positive(message = "Customer ID must be a positive number") @RequestParam(required = false) Long customerId,
             @Parameter(description = "Filter by order status") @RequestParam(required = false) OrderStatus status,
-            @Parameter(description = "Page number (0-indexed)") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Page number (0-indexed)") @Min(value = 0, message = "Page number must be 0 or greater") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size") @Min(value = 1, message = "Page size must be at least 1") @RequestParam(defaultValue = "10") int size,
             @Parameter(description = "Sort field") @RequestParam(defaultValue = "orderDate") String sortBy,
             @Parameter(description = "Sort direction (ASC or DESC)") @RequestParam(defaultValue = "DESC") String sortDirection) {
         
@@ -78,7 +83,7 @@ public class OrderController {
     })
     @PostMapping("")
     public ResponseEntity<Order> postMethodName(
-            @Parameter(description = "Order creation request") @RequestBody OrderCreationRequest request) throws URISyntaxException {
+            @Parameter(description = "Order creation request") @Valid @RequestBody OrderCreationRequest request) throws URISyntaxException {
         
 
         Order createdOrder = orderService.createOrder(request);
@@ -93,7 +98,7 @@ public class OrderController {
     })
     @GetMapping("/{orderId}")
     public ResponseEntity<Order> getOrderById(
-            @Parameter(description = "Order ID") @PathVariable Long orderId) {
+            @Parameter(description = "Order ID") @Positive(message = "Order ID must be a positive number") @PathVariable Long orderId) {
         Order order = orderService.getOrderById(orderId);
         return ResponseEntity.ok(order);
     }
@@ -107,8 +112,8 @@ public class OrderController {
     })
     @PutMapping("/{id}")
     public ResponseEntity<Order> updateOrder(
-            @Parameter(description = "Order ID") @PathVariable Long id,
-            @Parameter(description = "Order update request") @RequestBody OrderUpdateRequest request) {
+            @Parameter(description = "Order ID") @Positive(message = "Order ID must be a positive number") @PathVariable Long id,
+            @Parameter(description = "Order update request") @Valid @RequestBody OrderUpdateRequest request) {
         Order updatedOrder = orderService.updateOrder(id, request);
         return ResponseEntity.ok(updatedOrder);
     }
@@ -120,7 +125,7 @@ public class OrderController {
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> softDeleteOrder(
-            @Parameter(description = "Order ID") @PathVariable Long id) {
+            @Parameter(description = "Order ID") @Positive(message = "Order ID must be a positive number") @PathVariable Long id) {
         orderService.softDeleteOrder(id);
         return ResponseEntity.noContent().build();
     }
@@ -134,7 +139,7 @@ public class OrderController {
     })
     @PatchMapping("/{id}/status")
     public ResponseEntity<Order> updateOrderStatus(
-            @Parameter(description = "Order ID") @PathVariable Long id,
+            @Parameter(description = "Order ID") @Positive(message = "Order ID must be a positive number") @PathVariable Long id,
             @Parameter(description = "New order status") @RequestBody OrderStatus status) {
         Order updatedOrder = orderService.updateOrderStatus(id, status);
         return ResponseEntity.ok(updatedOrder);
@@ -148,7 +153,7 @@ public class OrderController {
     })
     @GetMapping("/{id}/history")
     public ResponseEntity<List<OrderEvent>> getOrderHistory(
-            @Parameter(description = "Order ID") @PathVariable Long id) {
+            @Parameter(description = "Order ID") @Positive(message = "Order ID must be a positive number") @PathVariable Long id) {
         List<OrderEvent> orderHistory = orderService.getOrderHistory(id);
         return ResponseEntity.ok(orderHistory);
     }

@@ -3,6 +3,7 @@ package com.gianniskoulopoulos.order_management.exception;
 import com.gianniskoulopoulos.order_management.exception.dto.ErrorResponse;
 import com.gianniskoulopoulos.order_management.exception.dto.ValidationError;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // TODO: Check if I should split this class into multiple smaller handlers
     @ExceptionHandler(OrderNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleOrderNotFoundException(
             OrderNotFoundException ex, HttpServletRequest request) {
@@ -129,6 +131,31 @@ public class GlobalExceptionHandler {
                 "MALFORMED_REQUEST",
                 "Request body is malformed or contains invalid data",
                 request.getRequestURI()
+        );
+        
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolationException(
+            ConstraintViolationException ex, HttpServletRequest request) {
+        
+        List<ValidationError> validationErrors = ex.getConstraintViolations()
+                .stream()
+                .map(violation -> new ValidationError(
+                        violation.getPropertyPath().toString(),
+                        violation.getInvalidValue(),
+                        violation.getMessage()
+                ))
+                .collect(Collectors.toList());
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "VALIDATION_FAILED",
+                "Validation failed for one or more parameters",
+                request.getRequestURI(),
+                validationErrors
         );
         
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
