@@ -53,7 +53,7 @@ public class OrderController {
     public OrderController(OrderService orderService) {
         this.orderService = orderService;
     }
-
+    // TODO: Change the incoming DTO to Pageable directly if possible
     @Operation(summary = "Get all orders", description = "Retrieve a paginated list of orders with optional filtering by customer ID and status")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Successfully retrieved orders",

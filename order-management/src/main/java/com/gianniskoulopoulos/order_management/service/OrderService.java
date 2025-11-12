@@ -12,7 +12,6 @@ import com.gianniskoulopoulos.order_management.model.event.OrderEvent;
 
 import java.util.List;
 
-@Service
 public interface OrderService {
     
     Order createOrder(OrderCreationRequest request);
