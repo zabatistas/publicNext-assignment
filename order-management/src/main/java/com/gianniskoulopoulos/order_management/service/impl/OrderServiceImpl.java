@@ -5,6 +5,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import com.gianniskoulopoulos.order_management.exception.OrderNotFoundException;
+import com.gianniskoulopoulos.order_management.exception.ProductNotFoundException;
 import com.gianniskoulopoulos.order_management.model.Order;
 import com.gianniskoulopoulos.order_management.model.OrderLine;
 import com.gianniskoulopoulos.order_management.model.OrderStatus;
@@ -49,9 +51,10 @@ public class OrderServiceImpl implements OrderService {
         // We will not implement this method fully now, just a stub to show the structure
         checkIfCustomerExists(request.customerId());
 
-        // TODO: Determine what to do if one of the products does not exist or has insufficient stock -> Mostly business, should come from requirements
+        // Validate products and stock
         for(OrderLineRequest olr : request.orderLines()) {
-            Product product = productRepository.findById(olr.productId()).orElseThrow(() -> new RuntimeException());
+            Product product = productRepository.findById(olr.productId())
+                .orElseThrow(() -> new ProductNotFoundException(olr.productId()));
 
             checkIfProductsExistAndHaveSufficientStock(product, olr.quantity());
         }
@@ -81,14 +84,14 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public Order getOrderById(Long orderId) {
         return orderRepository.findById(orderId)
-            .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
+            .orElseThrow(() -> new OrderNotFoundException(orderId));
     }
 
     @Override
     public Order updateOrder(Long orderId, OrderUpdateRequest request) {
         // Find the existing order
         Order existingOrder = orderRepository.findById(orderId)
-            .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
+            .orElseThrow(() -> new OrderNotFoundException(orderId));
 
         // Validate customer if provided
         if (request.customerId() != null) {
@@ -112,7 +115,7 @@ public class OrderServiceImpl implements OrderService {
             // Validate products
             for (OrderLineRequest olr : request.orderLines()) {
                 Product product = productRepository.findById(olr.productId())
-                    .orElseThrow(() -> new RuntimeException("Product not found with id: " + olr.productId()));
+                    .orElseThrow(() -> new ProductNotFoundException(olr.productId()));
                 checkIfProductsExistAndHaveSufficientStock(product, olr.quantity());
             }
 
@@ -133,7 +136,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public void softDeleteOrder(Long orderId) {
         Order order = orderRepository.findById(orderId)
-            .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
+            .orElseThrow(() -> new OrderNotFoundException(orderId));
         
         order.setIsDeleted(true);
         orderRepository.save(order);
@@ -166,7 +169,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public Order updateOrderStatus(Long orderId, OrderStatus status) {
         Order order = orderRepository.findById(orderId)
-            .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
+            .orElseThrow(() -> new OrderNotFoundException(orderId));
         
         OrderStatus previousStatus = order.getStatus();
         order.setStatus(status);
@@ -184,7 +187,7 @@ public class OrderServiceImpl implements OrderService {
     public List<OrderEvent> getOrderHistory(Long orderId) {
         // Verify order exists
         orderRepository.findById(orderId)
-            .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
+            .orElseThrow(() -> new OrderNotFoundException(orderId));
         
         // Return order events sorted by timestamp
         return orderEventRepository.findByOrderId(orderId);
