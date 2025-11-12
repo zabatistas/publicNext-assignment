@@ -43,6 +43,14 @@ services:
     volumes:
       - kafka_data:/var/lib/kafka/data
 
+  redis-next:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
   order-management:
     build:
       context: ./order-management
@@ -57,12 +65,16 @@ services:
       SPRING_DATA_MONGODB_URI: mongodb://public_user:publicN3xt!@mongo-next:27017/order_events_db?authSource=admin
       SPRING_DATA_MONGODB_DATABASE: order_events_db
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_DATA_REDIS_HOST: redis-next
+      SPRING_DATA_REDIS_PORT: 6379
     depends_on:
       - postgres-next
       - mongo-next
       - kafka
+      - redis-next
 
 volumes:
   postgres_data:
   mongo_data:
   kafka_data:
+  redis_data:

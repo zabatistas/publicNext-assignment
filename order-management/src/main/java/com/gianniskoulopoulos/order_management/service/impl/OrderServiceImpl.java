@@ -1,10 +1,15 @@
 package com.gianniskoulopoulos.order_management.service.impl;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import com.gianniskoulopoulos.order_management.config.CachingConfig;
 import com.gianniskoulopoulos.order_management.exception.OrderNotFoundException;
 import com.gianniskoulopoulos.order_management.exception.ProductNotFoundException;
 import com.gianniskoulopoulos.order_management.model.Order;
@@ -45,6 +50,10 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Caching(evict = {
+        @CacheEvict(value = CachingConfig.ALL_ORDERS_CACHE, allEntries = true),
+        @CacheEvict(value = CachingConfig.ORDER_HISTORY_CACHE, key = "#result.id")
+    })
     public Order createOrder(OrderCreationRequest request) {
 
         
@@ -82,12 +91,20 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Cacheable(value = CachingConfig.ORDER_BY_ID_CACHE, key = "#orderId", unless = "#result == null")
     public Order getOrderById(Long orderId) {
         return orderRepository.findById(orderId)
             .orElseThrow(() -> new OrderNotFoundException(orderId));
     }
 
     @Override
+    @Caching(
+        put = @CachePut(value = CachingConfig.ORDER_BY_ID_CACHE, key = "#orderId"),
+        evict = {
+            @CacheEvict(value = CachingConfig.ALL_ORDERS_CACHE, allEntries = true),
+            @CacheEvict(value = CachingConfig.ORDER_HISTORY_CACHE, key = "#orderId")
+        }
+    )
     public Order updateOrder(Long orderId, OrderUpdateRequest request) {
         // Find the existing order
         Order existingOrder = orderRepository.findById(orderId)
@@ -134,6 +151,11 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Caching(evict = {
+        @CacheEvict(value = CachingConfig.ORDER_BY_ID_CACHE, key = "#orderId"),
+        @CacheEvict(value = CachingConfig.ALL_ORDERS_CACHE, allEntries = true),
+        @CacheEvict(value = CachingConfig.ORDER_HISTORY_CACHE, key = "#orderId")
+    })
     public void softDeleteOrder(Long orderId) {
         Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new OrderNotFoundException(orderId));
@@ -143,6 +165,11 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Cacheable(
+        value = CachingConfig.ALL_ORDERS_CACHE, 
+        key = "#customerId + '_' + #status + '_' + #pageable.pageNumber + '_' + #pageable.pageSize",
+        unless = "#result == null || #result.isEmpty()"
+    )
     public Page<Order> getAllOrders(Long customerId, OrderStatus status, Pageable pageable) {
         Specification<Order> spec = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -167,6 +194,13 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Caching(
+        put = @CachePut(value = CachingConfig.ORDER_BY_ID_CACHE, key = "#orderId"),
+        evict = {
+            @CacheEvict(value = CachingConfig.ALL_ORDERS_CACHE, allEntries = true),
+            @CacheEvict(value = CachingConfig.ORDER_HISTORY_CACHE, key = "#orderId")
+        }
+    )
     public Order updateOrderStatus(Long orderId, OrderStatus status) {
         Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new OrderNotFoundException(orderId));
@@ -184,6 +218,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Cacheable(value = CachingConfig.ORDER_HISTORY_CACHE, key = "#orderId", unless = "#result == null || #result.isEmpty()")
     public List<OrderEvent> getOrderHistory(Long orderId) {
         // Verify order exists
         orderRepository.findById(orderId)
