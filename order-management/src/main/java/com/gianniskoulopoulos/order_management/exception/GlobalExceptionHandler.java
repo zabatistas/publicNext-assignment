@@ -4,6 +4,7 @@ import com.gianniskoulopoulos.order_management.exception.dto.ErrorResponse;
 import com.gianniskoulopoulos.order_management.exception.dto.ValidationError;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -23,6 +25,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(OrderNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleOrderNotFoundException(
             OrderNotFoundException ex, HttpServletRequest request) {
+        
+        log.warn("Order not found: {} - URI: {}", ex.getMessage(), request.getRequestURI());
         
         ErrorResponse errorResponse = new ErrorResponse(
                 LocalDateTime.now(),
@@ -39,6 +43,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleProductNotFoundException(
             ProductNotFoundException ex, HttpServletRequest request) {
         
+        log.warn("Product not found: {} - URI: {}", ex.getMessage(), request.getRequestURI());
+        
         ErrorResponse errorResponse = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.NOT_FOUND.value(),
@@ -53,6 +59,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CustomerNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleCustomerNotFoundException(
             CustomerNotFoundException ex, HttpServletRequest request) {
+        
+        log.warn("Customer not found: {} - URI: {}", ex.getMessage(), request.getRequestURI());
         
         ErrorResponse errorResponse = new ErrorResponse(
                 LocalDateTime.now(),
@@ -69,6 +77,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleInsufficientStockException(
             InsufficientStockException ex, HttpServletRequest request) {
         
+        log.warn("Insufficient stock: {} - URI: {}", ex.getMessage(), request.getRequestURI());
+        
         ErrorResponse errorResponse = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -83,6 +93,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidOrderStatusTransitionException.class)
     public ResponseEntity<ErrorResponse> handleInvalidOrderStatusTransitionException(
             InvalidOrderStatusTransitionException ex, HttpServletRequest request) {
+        
+        log.warn("Invalid status transition: {} - URI: {}", ex.getMessage(), request.getRequestURI());
         
         ErrorResponse errorResponse = new ErrorResponse(
                 LocalDateTime.now(),
@@ -109,6 +121,8 @@ public class GlobalExceptionHandler {
                 ))
                 .collect(Collectors.toList());
         
+        log.warn("Validation failed - URI: {}, errors: {}", request.getRequestURI(), validationErrors.size());
+        
         ErrorResponse errorResponse = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -124,6 +138,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
             HttpMessageNotReadableException ex, HttpServletRequest request) {
+        
+        log.warn("Malformed request - URI: {}, error: {}", request.getRequestURI(), ex.getMessage());
         
         ErrorResponse errorResponse = new ErrorResponse(
                 LocalDateTime.now(),
@@ -149,6 +165,8 @@ public class GlobalExceptionHandler {
                 ))
                 .collect(Collectors.toList());
         
+        log.warn("Constraint violation - URI: {}, violations: {}", request.getRequestURI(), validationErrors.size());
+        
         ErrorResponse errorResponse = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -171,6 +189,8 @@ public class GlobalExceptionHandler {
                 ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown"
         );
         
+        log.warn("Type mismatch - URI: {}, {}", request.getRequestURI(), message);
+        
         ErrorResponse errorResponse = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -186,6 +206,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception ex, HttpServletRequest request) {
         
+        log.error("Unexpected error - URI: {}, error: {}", request.getRequestURI(), ex.getMessage(), ex);
+        
         ErrorResponse errorResponse = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
@@ -193,9 +215,6 @@ public class GlobalExceptionHandler {
                 "An unexpected error occurred. Please try again later.",
                 request.getRequestURI()
         );
-        
-        // Log the actual exception for debugging purposes
-        ex.printStackTrace();
         
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
