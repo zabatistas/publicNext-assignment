@@ -2,7 +2,6 @@ package com.gianniskoulopoulos.order_management.service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
 
 import com.gianniskoulopoulos.order_management.model.Order;
 import com.gianniskoulopoulos.order_management.model.OrderStatus;

@@ -10,6 +10,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import com.gianniskoulopoulos.order_management.config.CachingConfig;
+import com.gianniskoulopoulos.order_management.exception.InsufficientStockException;
 import com.gianniskoulopoulos.order_management.exception.OrderNotFoundException;
 import com.gianniskoulopoulos.order_management.exception.ProductNotFoundException;
 import com.gianniskoulopoulos.order_management.model.Order;
@@ -65,7 +66,7 @@ public class OrderServiceImpl implements OrderService {
             Product product = productRepository.findById(olr.productId())
                 .orElseThrow(() -> new ProductNotFoundException(olr.productId()));
 
-            checkIfProductsExistAndHaveSufficientStock(product, olr.quantity());
+            checkIfThereIsSufficientStock(product, olr.quantity());
         }
 
         
@@ -81,13 +82,15 @@ public class OrderServiceImpl implements OrderService {
             .build());
     }
 
-    private void checkIfProductsExistAndHaveSufficientStock(Product product, Integer quantity) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'checkIfProductsExistAndHaveSufficientStock'");
+    private void checkIfThereIsSufficientStock(Product product, Integer quantity) {
+
+        if (product.getStockQuantity() < quantity) {
+            throw new InsufficientStockException(product.getId(), quantity, product.getStockQuantity());
+        }
     }
 
     private void checkIfCustomerExists(Long customerId) {
-        throw new UnsupportedOperationException("Unimplemented method 'checkIfCustomerExists'");
+        // Here we would normally call the Customer Service to verify the customer exists
     }
 
     @Override
@@ -133,7 +136,7 @@ public class OrderServiceImpl implements OrderService {
             for (OrderLineRequest olr : request.orderLines()) {
                 Product product = productRepository.findById(olr.productId())
                     .orElseThrow(() -> new ProductNotFoundException(olr.productId()));
-                checkIfProductsExistAndHaveSufficientStock(product, olr.quantity());
+                checkIfThereIsSufficientStock(product, olr.quantity());
             }
 
             // Update order lines
